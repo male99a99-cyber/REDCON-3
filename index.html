@@ -12,7 +12,7 @@
 <!-- PWA Manifest Embedded -->
 <link rel="manifest" href='data:application/manifest+json,{"name":"ريدكون للتعمير","short_name":"ريدكون","description":"نظام الحضور والانصراف بالتعرف على الوجه - ريدكون للتعمير","start_url":"./","display":"standalone","background_color":"#0d1117","theme_color":"#0d1117","orientation":"portrait-primary","lang":"ar","dir":"rtl","icons":[{"src":"data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%232ea043%22/%3E%3Ctext x=%2250%22 y=%2268%22 font-size=%2260%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22Arial%22 font-weight=%22bold%22%3EH%3C/text%3E%3C/svg%3E","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}'>
 
-<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.14/dist/face-api.js"></script>
 
 <style>
 :root {
@@ -670,8 +670,8 @@ async function doLogin() {
       if (token && token !== 'offline-session') localStorage.setItem('sb_token', token);
       localStorage.setItem('sb_email', authEmail);
       localStorage.setItem('sb_logged_in', '1');
-      // بصمة بسيطة للتحقق دون إنترنت (بريد + كلمة المرور) على نفس الجهاز فقط
-      localStorage.setItem('sb_fp', btoa(unescape(encodeURIComponent((authEmail || '').toLowerCase() + '\n' + pass))));
+      // إزالة أي بصمة قديمة كانت تخزن كلمة المرور بترميز قابل للاسترجاع
+      localStorage.removeItem('sb_fp');
     } catch (e) {}
   }
 
@@ -686,17 +686,7 @@ async function doLogin() {
   function canEnterOffline() {
     const savedEmail = (localStorage.getItem('sb_email') || '').trim().toLowerCase();
     const wasLogged = localStorage.getItem('sb_logged_in') === '1';
-    const savedToken = localStorage.getItem('sb_token') || '';
-    const fp = localStorage.getItem('sb_fp') || '';
-    const tryFp = btoa(unescape(encodeURIComponent(email.toLowerCase() + '\n' + pass)));
-    const emailOk = !savedEmail || savedEmail === email.toLowerCase();
-    const fpOk = fp && fp === tryFp;
-    let hasLocalData = false;
-    try {
-      hasLocalData = (JSON.parse(localStorage.getItem('employees') || '[]').length > 0)
-        || (JSON.parse(localStorage.getItem('records') || '[]').length > 0);
-    } catch (e) {}
-    return fpOk || (emailOk && (wasLogged || !!savedToken)) || (emailOk && hasLocalData && wasLogged);
+    return wasLogged && !!savedEmail && savedEmail === email.toLowerCase();
   }
 
   // بدون إنترنت
@@ -705,7 +695,7 @@ async function doLogin() {
       enterLocalSession(localStorage.getItem('sb_token'), localStorage.getItem('sb_email') || email);
       return;
     }
-    msg.innerHTML = '<div class="status-msg error">لا يوجد إنترنت ولا توجد جلسة محفوظة على هذا المتصفح. اتصل بالنت، سجّل الدخول من نفس الرابط، ولا تضغط «خروج»، ثم أعد المحاولة بدون نت</div>';
+    msg.innerHTML = '<div class="status-msg error">لا يمكن إنشاء جلسة جديدة دون إنترنت. سجّل الدخول مرة واحدة أثناء الاتصال، وستبقى الجلسة محفوظة على هذا الجهاز حتى تسجيل الخروج أو حذف بيانات الموقع.</div>';
     return;
   }
 
@@ -740,26 +730,36 @@ async function doLogin() {
 
 function doLogout() {
   stopCamera();
-  // لا نعرض شاشة الدخول — التطبيق يعمل بدون بوابة دخول
-  authToken = localStorage.getItem('sb_token') || 'offline-session';
+  authToken = null;
+  authEmail = '';
+  try {
+    localStorage.removeItem('sb_token');
+    localStorage.removeItem('sb_email');
+    localStorage.removeItem('sb_logged_in');
+    localStorage.removeItem('sb_fp');
+  } catch (e) {}
+  const loginModal = document.getElementById('modal-login');
+  if (loginModal) loginModal.classList.add('active');
+  const btnOut = document.getElementById('btn-logout');
+  if (btnOut) btnOut.style.display = 'none';
   try { applyLocalDataAndRefreshUI(); } catch (e) {}
-  if (navigator.onLine) {
-    try { fetchCloudData(); } catch (e) {}
-  }
 }
 
 function checkAuth() {
-  // تجاوز شاشة الدخول بالكامل — الدخول مباشرة للوحة التحكم
+  let hasSession = false;
   try {
-    authToken = localStorage.getItem('sb_token') || authToken || 'offline-session';
-    authEmail = localStorage.getItem('sb_email') || authEmail || '';
+    authToken = localStorage.getItem('sb_token') || null;
+    authEmail = localStorage.getItem('sb_email') || '';
+    hasSession = localStorage.getItem('sb_logged_in') === '1' && !!authEmail;
+    localStorage.removeItem('sb_fp');
   } catch (e) {
-    authToken = authToken || 'offline-session';
+    authToken = null;
+    authEmail = '';
   }
   const loginModal = document.getElementById('modal-login');
-  if (loginModal) loginModal.classList.remove('active');
+  if (loginModal) loginModal.classList.toggle('active', !hasSession);
   const btnOut = document.getElementById('btn-logout');
-  if (btnOut) btnOut.style.display = 'none';
+  if (btnOut) btnOut.style.display = hasSession ? 'inline-block' : 'none';
   try { applyLocalDataAndRefreshUI(); } catch (e) {}
 }
 
@@ -1201,11 +1201,6 @@ function exportExcelByShift(shiftKey) {
 document.getElementById('today-date').textContent = new Date().toLocaleDateString('ar-EG', {
   weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
 });
-loadModels();
-checkAuth();
-// Offline-first: حمّل البيانات المحلية فوراً حتى تعمل الأزرار والتنقل بدون إنترنت
-applyLocalDataAndRefreshUI();
-if (authToken) fetchCloudData();
 window.addEventListener('online', function() {
   flushOfflineQueue();
   if (authToken) fetchCloudData();
@@ -1213,6 +1208,20 @@ window.addEventListener('online', function() {
 window.addEventListener('offline', function() {
   applyLocalDataAndRefreshUI();
 });
+async function initializeApp() {
+  if ('serviceWorker' in navigator) {
+    try {
+      await navigator.serviceWorker.register('./service-worker.js');
+      await navigator.serviceWorker.ready;
+    } catch (e) {}
+  }
+  checkAuth();
+  // Offline-first: حمّل البيانات المحلية فوراً حتى تعمل الأزرار والتنقل بدون إنترنت
+  applyLocalDataAndRefreshUI();
+  if (authToken) fetchCloudData();
+  loadModels();
+}
+initializeApp();
 </script>
 </body>
 </html>
