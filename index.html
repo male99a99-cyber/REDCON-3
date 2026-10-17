@@ -675,27 +675,9 @@ async function doLogin() {
     } catch (e) {}
   }
 
-  function enterLocalSession(token, mail) {
-    saveSession(token || localStorage.getItem('sb_token') || 'offline-session', mail || localStorage.getItem('sb_email') || email);
-    document.getElementById('btn-logout').style.display = 'inline-block';
-    document.getElementById('modal-login').classList.remove('active');
-    msg.innerHTML = '';
-    try { applyLocalDataAndRefreshUI(); } catch (e) {}
-  }
-
-  function canEnterOffline() {
-    const savedEmail = (localStorage.getItem('sb_email') || '').trim().toLowerCase();
-    const wasLogged = localStorage.getItem('sb_logged_in') === '1';
-    return wasLogged && !!savedEmail && savedEmail === email.toLowerCase();
-  }
-
   // بدون إنترنت
   if (!navigator.onLine) {
-    if (canEnterOffline()) {
-      enterLocalSession(localStorage.getItem('sb_token'), localStorage.getItem('sb_email') || email);
-      return;
-    }
-    msg.innerHTML = '<div class="status-msg error">لا يمكن إنشاء جلسة جديدة دون إنترنت. سجّل الدخول مرة واحدة أثناء الاتصال، وستبقى الجلسة محفوظة على هذا الجهاز حتى تسجيل الخروج أو حذف بيانات الموقع.</div>';
+    msg.innerHTML = '<div class="status-msg error">لا يمكن التحقق من كلمة المرور دون إنترنت. سجّل الدخول أثناء الاتصال؛ إذا كانت جلستك محفوظة على هذا الجهاز فسيُفتح التطبيق تلقائيًا دون إعادة إدخال كلمة المرور.</div>';
     return;
   }
 
@@ -720,10 +702,6 @@ async function doLogin() {
     msg.innerHTML = '';
     fetchCloudData();
   } catch (e) {
-    if (canEnterOffline()) {
-      enterLocalSession(localStorage.getItem('sb_token'), localStorage.getItem('sb_email') || email);
-      return;
-    }
     msg.innerHTML = '<div class="status-msg error">بيانات الدخول غير صحيحة أو لا يوجد اتصال</div>';
   }
 }
