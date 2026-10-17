@@ -670,8 +670,8 @@ async function doLogin() {
       if (token && token !== 'offline-session') localStorage.setItem('sb_token', token);
       localStorage.setItem('sb_email', authEmail);
       localStorage.setItem('sb_logged_in', '1');
-      // بصمة بسيطة للتحقق دون إنترنت (بريد + كلمة المرور) على نفس الجهاز فقط
-      localStorage.setItem('sb_fp', btoa(unescape(encodeURIComponent((authEmail || '').toLowerCase() + '\n' + pass))));
+      // لا تحفظ كلمة المرور؛ يكفي الاحتفاظ بعلامة الجلسة التي أُنشئت بعد تحقق Supabase.
+      localStorage.removeItem('sb_fp');
     } catch (e) {}
   }
 
@@ -686,17 +686,7 @@ async function doLogin() {
   function canEnterOffline() {
     const savedEmail = (localStorage.getItem('sb_email') || '').trim().toLowerCase();
     const wasLogged = localStorage.getItem('sb_logged_in') === '1';
-    const savedToken = localStorage.getItem('sb_token') || '';
-    const fp = localStorage.getItem('sb_fp') || '';
-    const tryFp = btoa(unescape(encodeURIComponent(email.toLowerCase() + '\n' + pass)));
-    const emailOk = !savedEmail || savedEmail === email.toLowerCase();
-    const fpOk = fp && fp === tryFp;
-    let hasLocalData = false;
-    try {
-      hasLocalData = (JSON.parse(localStorage.getItem('employees') || '[]').length > 0)
-        || (JSON.parse(localStorage.getItem('records') || '[]').length > 0);
-    } catch (e) {}
-    return fpOk || (emailOk && (wasLogged || !!savedToken)) || (emailOk && hasLocalData && wasLogged);
+    return wasLogged && !!savedEmail && savedEmail === email.toLowerCase();
   }
 
   // بدون إنترنت
@@ -749,15 +739,18 @@ function doLogout() {
 }
 
 function checkAuth() {
-  // تجاوز شاشة الدخول بالكامل — الدخول مباشرة للوحة التحكم
+  let hasSession = false;
   try {
-    authToken = localStorage.getItem('sb_token') || authToken || 'offline-session';
-    authEmail = localStorage.getItem('sb_email') || authEmail || '';
+    authToken = localStorage.getItem('sb_token') || null;
+    authEmail = localStorage.getItem('sb_email') || '';
+    hasSession = localStorage.getItem('sb_logged_in') === '1' && !!authEmail;
+    localStorage.removeItem('sb_fp');
   } catch (e) {
-    authToken = authToken || 'offline-session';
+    authToken = null;
+    authEmail = '';
   }
   const loginModal = document.getElementById('modal-login');
-  if (loginModal) loginModal.classList.remove('active');
+  if (loginModal) loginModal.classList.toggle('active', !hasSession);
   const btnOut = document.getElementById('btn-logout');
   if (btnOut) btnOut.style.display = 'none';
   try { applyLocalDataAndRefreshUI(); } catch (e) {}
