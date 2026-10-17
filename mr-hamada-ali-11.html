@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ريدكون للتعمير">
+<title>ريدكون للتعمير - الحضور</title>
+
+<!-- PWA Manifest Embedded -->
+<link rel="manifest" href='data:application/manifest+json,{"name":"ريدكون للتعمير","short_name":"ريدكون","description":"نظام الحضور والانصراف بالتعرف على الوجه - ريدكون للتعمير","start_url":"./","display":"standalone","background_color":"#0d1117","theme_color":"#0d1117","orientation":"portrait-primary","lang":"ar","dir":"rtl","icons":[{"src":"data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%232ea043%22/%3E%3Ctext x=%2250%22 y=%2268%22 font-size=%2260%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22Arial%22 font-weight=%22bold%22%3EH%3C/text%3E%3C/svg%3E","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}'>
+
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+
+<style>
+:root {
+  --bg: #0d1117;
+  --card: #161b22;
+  --border: #30363d;
+  --green: #2ea043;
+  --green-dark: #238636;
+  --red: #da3633;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --accent: #58a6ff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Arabic", Tahoma, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 85px;
+  -webkit-font-smoothing: antialiased;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: #010409;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 17px;
+}
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #fff;
+  font-size: 15px;
+}
+.page { display: none; padding: 16px; max-width: 520px; margin: 0 auto; }
+.page.active { display: block; }
+h1 { font-size: 22px; margin-bottom: 6px; font-weight: 700; }
+.subtitle { color: var(--muted); font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+.stat { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 8px; text-align: center; }
+.stat .num { font-size: 24px; font-weight: 700; }
+.stat .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; padding: 16px; border: none; border-radius: 12px;
+  font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 12px; color: #fff;
+  transition: opacity 0.15s;
+}
+.btn:active { opacity: 0.85; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-green { background: var(--green); }
+.btn-red { background: var(--red); }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-flash { background: #d4a017; color: #111; }
+.btn-flash.on { background: #fff3bf; }
+.btn-sm { padding: 10px 14px; font-size: 14px; width: auto; display: inline-flex; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+.empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+.empty svg { margin-bottom: 12px; opacity: 0.5; }
+input, select {
+  width: 100%; padding: 12px 14px; background: #0d1117; border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text); font-size: 15px; margin-bottom: 12px; outline: none;
+}
+input:focus, select:focus { border-color: var(--green); }
+label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+video, canvas { width: 100%; max-width: 320px; border-radius: 12px; background: #000; display: block; margin: 0 auto 12px; }
+.camera-box { text-align: center; position: relative; }
+.flash-ring { border-radius: 16px; padding: 10px; margin-bottom: 8px; transition: background 0.15s, box-shadow 0.15s; }
+.flash-ring.on { background: #fff; box-shadow: 0 0 40px 12px #fff; }
+.employee-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid var(--border); }
+.employee-item:last-child { border-bottom: none; }
+.emp-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background: #21262d; flex-shrink: 0; }
+.emp-info { flex: 1; min-width: 0; }
+.emp-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.emp-id { font-size: 13px; color: var(--muted); }
+.badge { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.badge-in { background: rgba(35, 134, 54, 0.2); color: #3fb950; }
+.badge-out { background: rgba(218, 54, 51, 0.2); color: #f85149; }
+nav {
+  position: fixed; bottom: 0; left: 0; right: 0; background: #010409;
+  border-top: 1px solid var(--border); display: flex; justify-content: space-around;
+  padding: 8px 0 12px; z-index: 100;
+}
+nav button {
+  background: none; border: none; color: var(--muted); font-size: 11px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 8px;
+}
+nav button.active { color: var(--green); }
+nav svg { width: 22px; height: 22px; }
+.modal {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.88); display: none;
+  align-items: center; justify-content: center; z-index: 200; padding: 16px;
+}
+.modal.active { display: flex; }
+.modal.lit { background: #fff; }
+.modal-content {
+  background: var(--card); border-radius: 16px; padding: 20px;
+  width: 100%; max-width: 380px; max-height: 92vh; overflow-y: auto;
+}
+.modal.lit .modal-content { background: #111; }
+.status-msg {
+  text-align: center; padding: 12px; border-radius: 10px; margin: 10px 0;
+  font-size: 15px; font-weight: 600; min-height: 48px;
+  display: flex; align-items: center; justify-content: center;
+}
+.success { background: rgba(35, 134, 54, 0.25); color: #3fb950; }
+.error { background: rgba(218, 54, 51, 0.25); color: #f85149; }
+.loading { color: var(--accent); }
+.export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.export-btn {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px; color: var(--text); font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.export-btn:active { background: #21262d; }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table.records-table { width: 100%; border-collapse: collapse; font-size: 14px; font-weight: 700; min-width: 520px; }
+table.records-table th {
+  background: #21262d; color: #000; font-weight: 900; padding: 10px 8px;
+  text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+table.records-table td { padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+table.records-table tr:last-child td { border-bottom: none; }
+.share-above-table {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px; padding: 0 4px; flex-wrap: wrap; gap: 8px;
+}
+.share-above-table h3 { font-size: 16px; font-weight: 600; }
+.share-btn-top {
+  background: var(--green); color: #fff; border: none; border-radius: 10px;
+  padding: 10px 14px; font-size: 13px; font-weight: 600;
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+}
+.share-btn-top:active { background: var(--green-dark); }
+.clear-btn {
+  background: transparent; border: 1px solid var(--red); color: var(--red);
+  border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.setting-row { margin-bottom: 18px; }
+.setting-row label { font-size: 14px; color: var(--text); margin-bottom: 8px; }
+.setting-hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+.logo-img { height: 36px; width: auto; max-width: 160px; object-fit: contain; display: block; }
+.logo-img-lg { height: 56px; width: auto; max-width: 240px; object-fit: contain; display: block; margin: 0 auto 12px; }
+.logo-text-ar { font-size: 13px; color: var(--muted); margin-top: 4px; text-align: center; }
+
+.success-check {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: rgba(0,0,0,0.25);
+}
+.success-check.show { display: flex; }
+.success-check .mark {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: #2ea043;
+  color: #fff;
+  font-size: 72px;
+  font-weight: 900;
+  line-height: 120px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(46,160,67,0.55);
+  animation: checkPop 0.35s ease-out;
+}
+@keyframes checkPop {
+  0% { transform: scale(0.4); opacity: 0; }
+  70% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+#modal-login .modal-content {
+  border: 1px solid rgba(192, 197, 206, 0.35);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 12px 40px rgba(0, 0, 0, 0.55),
+    0 4px 16px rgba(0, 0, 0, 0.35),
+    0 0 24px rgba(192, 197, 206, 0.08);
+  background: linear-gradient(165deg, #1a2130 0%, #161b22 55%, #131820 100%);
+}
+</style>
+</head>
+<body>
+<div id="success-check" class="success-check" aria-hidden="true"><div class="mark">✓</div></div>
+
+
+<!-- شاشة تسجيل الدخول -->
+<div class="modal" id="modal-login">
+  <div class="modal-content">
+    <div style="text-align:center;margin-bottom:18px">
+      <img class="logo-img-lg" src="data:image/jpeg;base64,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" alt="ريدكون للتعمير">
+      <p class="logo-text-ar">Mr Hamada Ali</p>
+      <p style="font-size:13px;color:var(--muted);margin-top:8px">سجّل الدخول للمتابعة إلى نظام الحضور</p>
+    </div>
+    <label>البريد الإلكتروني</label>
+    <input type="email" id="login-email" placeholder="admin@example.com" autocomplete="username">
+    <label>كلمة المرور</label>
+    <input type="password" id="login-pass" placeholder="********" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn btn-green" onclick="doLogin()">تسجيل الدخول</button>
+    <div id="login-msg"></div>
+  </div>
+</div>
+
+<header>
+  <div class="logo">
+    <img class="logo-img" src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCABkAQYDASIAAhEBAxEB/8QAHQAAAQQDAQEAAAAAAAAAAAAAAAMGBwgBAgQFCf/EAFAQAAECBQMBBQQECQUNCQAAAAECAwAEBQYRBxIhMQgTQVFhFCJxgRUykbEWIzdCYnJ0obMkMzaytBcmNDVDUmNzdYKDwdJEU1VllaKjw9H/xAAaAQEAAgMBAAAAAAAAAAAAAAAAAQQCAwUG/8QALhEAAgIBAwMDAQgDAQAAAAAAAAECAxEEEiEFIjETFFGBFTJBYXGRwdEzoeHw/9oADAMBAAIRAxEAPwC5JRzkcH74SlFfihng8n95heOeVTmWR55PPzMAdEGY0Sog4X9vhG3j84AzBBGPHEAZggggAgjCjgZJiLNUtbLYs0uyMo4KzWEZBlZdY2NK/wBIvon4DJ9BGyuqdstsFlmFlka1mTwSZOzktJyy5mbebYZbGVuOLCUpHmSeBCjbqHEpWghSVgFJByCD0I9Iord993PqHXpNmvVFSZRyabbbk2BtYa3LCchH5yhnqrPyiR5itX1ofcTFGenmKvSH0qdl5dxRKFNhWDtzy0rnoMiLGr0MtMo73yzRp9VG9vauEWnghjac6n2xeraW5GbErUMZXIzCglweZT4LHqPsEPmKZaCCCCACCAnAjG6IyDMEa7k5+sI2HSJAQQQQAQQGEn32mGy4+6hpA6qWoAD5mAFYISlpmXmUlUu+08AcEoWFAfZCsAEEEEAEEEEAEEEEAEEEEAEc8qoiXQQMjnPn1MLYIPHPpCUioGWTj1+8wArwoecan3MAZIyPlGVJwdwOD98Y3DgHOcwAoDmMfnRqoYII+yMjr8hAG0EEEAJTf+Du/qH7o+cQ6q/WV/WMfRyZ95lxA5UUkD7I+e9y29XLZqSqdXqXM0+ZClbUvJ4WMnlKhwoeoMd/oEkpTT88HI6tFtRYjb/9IaX+3y/8VMWL7SKUr1csZKhlJUgEHoR7W1FdLf8A6Q0v9vl/4qYsZ2j/AMr9jD9Nv+2NRl1371f1I6T9yX0OHVSg0i39fbRTRZFqRROPszDyGRhJc78pJA6JyOoHEWWEV912/L7Yv/B/tBiwQjz51wgggiCRla5T07TNJrin6dNPSk2xJlTTzStq0HcnkHwMVksma1kvQTircuKsTYkykP7qiG9pVkj63XoYsn2huNF7o/YT/WTEEdmK+rWstq4E3JUhJGbcYLALS17wlKt31QcdRHb0KcdJOcYqUk/jPwcnWYeojGUsLH9nFMXzrFppX5di5ZmbmUuJ3plp9aXmphAPvbHE8g/A8eIi1FoXBKXLbFOr0hn2aeYS82FfWTnqk+oII+UVb7SupFv3q9SZC3lOPStPU485NLbKApSkhISkHkjAyTxk4Aj3b7q1dsLs52nbKVPSNRqyFiZUFFLjLPLikZ6gnelJ8huidRpnfCpuKjOTx/5EUX+jKfdmKJuq+qNg0mfMjULspTMyk4Ujvt20+RKQQPnDmpNTkatJInaZOS05KuDKHmHAtCvmIqDp9bOj8xabcxdt7OSlXmUlRl5dSkJleeARsIWroTzjw9Y7+zpXnbb1cVbEnU0z9FqTrsuFtghpxSQVNPJSfqkgEH4+gjVb02GyXpt5j8rCf6G2GtluippYfw+fqWjuS46Lbkl7bXapJ06XzgLmHQncfIDqT8IiXXa87UuzRmvooFdkaitsy5W20vK0jvk8lJ5x64iHp/6U1l1vckDOKZYcmHWmFL94Sko0TkpT/nHbn1UrniHDrfonJ2Xaf4RUOqT00ywpDc21NbScLOAtJSBxuxlJ88xsp0VFNlasn3vDxjg126q22E9ke1ZQ+exiAix62EpAH0r0Ax/kkRK90Xta1sKCK9XqfT1nkNvOjeR57Rk49cRAmgdxKtPQe9LhbSlb0lOKUylXQuFptKAfTcRDV0W06f1VrVXrdxVeb7hh0JmXkEF6ZeWNxG452pA9PIDiIu0kLLrbbJYimTVqJwqrrgsyaLUWveNt3Q2pdv1qRqIQMrSy7lSR5lJ5A+UejWKtTqPIrnqpPS0lKo+s8+4EJHzPjEE0TQOqW7qXJVegXQuVpUuUu98tO6aJB95kgYSpKh1UfA9M4MR7qXO1jVLXQ2sxNFuUZn10+TQrltlKM966U+KvdWfgAIr16Kq2xqufallvHg3T1VlcMzjy3hFlKPqjYFWnhI0+7KU9MqOEtl3ZuPkCrAPyhz1OoytNp79Qn5hqWlJdsuPOuHCUIHVR9IrLq1oRTrZseZuCi1WdmXae2HZlqaCSHUZAUU7R7pGc45GAY69OLunrg7O98UepzC5l+j09xDTrity1MrbJSFHx2lKgPQCJnoapQVtMm1lJ588iOqsjJwsjh4yvoTfK6i2VM02ZqTN0UlcpKqSl932gBKFKBKRz4nBwOvEKWtf1oXRMmVoNw0+efAJLTbmF4HUhJwT8oqXoVp1/dErE3KzU87J02QbQ8+poBSlrVkJSAeAcAkny4HWNdX7RmNKb6kzS6m+6Espn5GZUAHWyhRBScccEfAhWPOLD6ZR6rpU3u/D4NK11uxWuPaXdEEcNvzn0jRZKobdvtUu29t8tyArH74I4mMcM6ieVk7jHPKpzLoIyDzyPiYXz5wlJf4Mn5/eYEm4URgL49fAxhwAkfEYI8I3IB68wmsbduMkbhxAGckFIV9sbD65x5CMKOVJ+f3QJ/nFfAQBvEe6hat2pZ3eSz039I1JPAkpQhSwf01fVR8+fSJCMUIvj+m1wD/zab/iqgiG8DtvzV68LwdVKJmvomnOqCRKyaikkE8b1/WV8BgekexVLgvGzWPwa1Lt1FxUFXCETo35HmxMefkDyPSInk8e1M/61H9YRf2fp8lU6c5I1CVYmpV1G1xl5sLQoeoMZZ2vKISysMphqVbFItXVKjSdC9qTIzfsM623MOb1Nd46Pc3eIGB1yfWJU7R+P7r1i/rt/2xqGh2kWWmNdKIwygIbalqehCR0AD5AEO/tHjOr9ij9Jv+2NR09fOU6aZSeXhlHSRUbLEvkU13/L9Yn/AAf7QYsGCPOIe1bthU3qbQryqlTkqTQKJLpW/MPrypxxLylBtCepJGOfsBMNmudpBqTuNr2G3jM0TJSta3Nkyv8ASSPqgfonn1EcxRcuEXnJR8liIIalg6gWve8p39BqLbrqQC7Kue4+z+sg849RkesOuMWmvJKafgYPaG/IvdH7Cf6yYr32edOLfv8Abriq47UUGRWylkSsx3WdwUTng56CLaV+l0+tUeZpVVlW5uSmUbHmXM7Vp8jj4RHEtcujemlSmqVKT9KpE28tKZpmXC3MKSOAvbuCSAY6Gn1rpolXDKk35RTu0qtujOXKX4Fe65R16Rayyvt1PTU6bKzCZmX79sL9ollHGfLvEc8/5yR5xMHagoy7v07pF1UAmfYkFGZPcp3Fcs6kArAHJ24SSPLPlEm1W37K1Cp0jUJ+RptelEArlHwrekBXXapJ6HHI9I9i36JSqBSWqVR5RuTkWc90w2TtRkknGTxyTxGc+o7pV2474+fhmEdFtU4Z7Zf6Klaa3Bo6i3GpW9rScXUmMpM4w2t1MynJwohKhtVjg+B6xJGhczpZc15TaqDY/wBE1ClkTEm8tallTZ93ecEhCskjac5B46GJErOkOnFXnVTs5a8kH1K3LUyVM7j5kIIEOW2bZoVsyJkqDS5WnS6juUhhsJ3nzUepPqTGWq11VkHs3Zfy+ERRpbISW7GF+XJUAPVHR3XN2amZRT6JaZeWlHT2qUeJ95J6ZwR8FJwYd2uutNIu6zjbVvSs/ibWhc09MthvalB3bEjJJJIGT0AHrFhr0ti1rgpavwop0jOSsuFOd5MADuh4qC+CkefMN+19NdLlUR9VEodKm5CoNlpx5DpfDqN2SkObicZA4B8IzWv083Cy2Dc4/s8GL0l0VKEJdrIh0Mt1y69Ab2t9k4mJucUGcnH4xLTakA+hIA+cN3QjUlvTWqVei3JT5xuWmHgp5LbeXpV9I2kFBxkEcfIEZEWotW1rftaTdk7fpkvTpd5zvXENZwpWAMnJ8gBHn3bp5Zl1v+016gSc5MbdvtGCh0jwBWkgn5xh7+qcrI2RbhJ5/NE+znGMHB90f2Isku0C5WdRpCiW/bT8/TJpSWAVHZNKWVcuBPQISOSFc4GcjoY1v+XqmlmvpuP2XvZZyoLn5Qk4TMNOZ7xsK8FDepPpwekWhtGwrRtIrXb9DlJFxxO1byQVOKHkVqJOPTMdd4Uy3KhQnkXRL09+mNje6Z0J7tv9Lcfq/EERjXraabH6cO1rD55ZnLS22Q75d2crjhFftYddqJcFhzdCoEpPJfqDYamXJpAbSw2SCoDn3lEDHlyY10xtaconZ2vmuVBlyXcrNPcWw2tJSoMttkJUQf8AOKlEemIe1zWzpBp7a678atKXqMuyptbKmFGYSSpWEqTvVsAz4ngRJkgulXjZzLz0otyl1aSStUvMI2lTTiQdqh4cHETPWVQrVVEWlnLyRHTWSm52tN4wiBuxQP5RdX6sp/8AZHk9tYE3bRcZ/wAUvj/5IsXaFl2vaaplVu0aWpxmgkPdzn39uducnwyYSu6xbRuyaambiocpUnmWy02t7OUoJyUjBHGYLqEPee4w8f8AB7OXtvRzydliEGyqHj/w6X/hJgj1JGWZk5RqUlmw2wyhLbaB0SlIwAPgBBHMk8tsvxWFgWjnkwfZknPnx8zCgKk8HJEaSJCpZJzxz95iCRXcCMePlGHPzP1hGVgED4wmsqG3IyNw+MAbLT7yfA5PPyjKeHCD5CMKUCpGDnk/dGCSFqx1wIPgCpim7unNzXReNwzzEu1TqUmqzRXUqgvuZcDvlcgnlXy49Yl3UntA0C33H6bbzH05Um1KbUsHZLNLBwQpXVRB8E/aIrvdF53PqBXJRq4aq4tl6YbaRLtDYw1uUE5SgcEjPU5MdPTdLutW+XbH8zn6jqFVfbHlnXdNlXHaFSYTWaepEut1HdTbJ7yXdG4YKVjj5HBi8rR9wfCKpztP1U0bQ4yUNXFam7323EF+W25/OQfeZPqMpicrD1Iptw2Oq6Z+TmaBJNHatU8AltXHVtX+UT4AgZ9IrajSutb4tSj8r+jfTqFN7WsSIT7QVMqFX7RFHkqXJvzkwZaScLbSdxCUvEqUfIAA5J4h9613DYtKuyTq0+z9O3BTWi3KU9Ln4lhRWFhx0jooEDA5Pp4w0r/1an6/WHabYdOdlVzYEuqdbZzOzaR0SjHKE8n158I7LM0dkabJfhFqXUGZOVQe8Mkp8JGev41zPJ/RTyfE+ERde7YQi191YMqqVXKUk/LGnKyN/wCsVwmacWpyWbUR37gKJOVB8EDxPwyo+JEIdoSwaVYlFtxiTddmpyacfM1NL437UpwAnolIyf8AmYe1669SFMlBRtPqYwhllOxucfa2MoH+ja8firA9DEM6hWjqvdtPavN2j16qNpUoqfI/GBJAIUhrO7Zx+anEaoT2STNko7lgakjOTchONTkjMvysyyctvMuFC0HzBEXI7M13128LGmJq4JluamZScVLJeDYQpaQhJBVjgnnrxmKJy1YeaeWxOtKK2ztWNu1xB8lJPQ/ZFyexTMNTOnNUcZXuT9LLHTBB7tHBEbrbIThx5NNUJQlhkmaw1idoGmNw1em7hNy0i4plSeqFHgKHqM5+URj2eNOLNqWlUjWaxRZOrz1WDq5l+bR3igO8Unaknp9XJI5JOcxOFXkZap0uZp06yHpaaaUy82ei0KBCh9hiB6dpbq1ZpmqTYN7SKKE86pbSJ5GXWc/FKgD5lOM9cZisiwdmos3NabSVr6baZMN06cr844ETT/4wtAqG5WVZyolQ5IOEp4GcQjQK9qDYOq9Cs+8bjauam19KgxMlkIcacHHHTgHAIOchWRjGI665ozcM/ZdBQq9JiYu6hTS5mUqcwlRRlagoteKtoUEkKOTwcjBwOq0dM7yqGo0je2pFfkqhMUtvbISsi2UtpVz7yuAB1JwM5OMnAxAYI9tGp6yXpSbnnaXfSpOWo06+UhxpHevKTuIZCgj3UhIHUdTHTWdYbynNErerUtM/R81OVJ2nVSrolgsMBv8APCOQCoHP+6QOoiS9IdOq1aFv3VTqlNSDrtYnXphgsFZShK0FICsgc5PhDetXTLUm1dM5G3qHcNAanGqlMTM22/Lqel5ppzG1B3J4xyenJxyIA8Wnzterumt4opusUjc7bciHgFyQQ+02AS8hSSAQFpG0HGASY59Jjd9E7OdWuGVuNDdOTS3lUqVZl0hyTcS6rcrcRhWefhmHXYGkVYl65cdcuydpLczWqaunCVo8uWmWkLAClYwBngcD1JOenJaWmOo1KsCtWLPV6hTFGdp70vTwhC0rS6tYUFrO3ITjdkc4zxmJYweDQK3qmdF6xqBVLu3S66PspjSEI75Cw+kd+o7cFRG8fDHEelfN63XI9lygXPKV2ZZrUymT76dSEd4reVbjgpxzgeEPy3tPHmtC2dO6xNtKeNOXKOzEtlSUqKlKCk5wTgkHnHSIvn9FdVqjZDdnzt3URdIp5BkJZLawFkE43q27glIJIHODx6wWAezdV4XzdF8UnTqzqwmivikMz1Sqi2gteVNpXgDHA5T05JV4AR52ptG1Vk9F7plrsuenz0lJqCw6hkF6elcYUheAAj3ykg9fdI5BEOm8tKrk/COjXjY9akqZcEnINSU0mYbKmZhKEBOeh8OMEYIweCI6qbp1edUsa6qNfN3mozVfbKG0MN/yeSOOCgEAnJAykYGBxySYgDGamb1tbswzFb/CdDgcl5NVKSzLISqTaKwFNncCF5yOSPCPSuG9b4r9Vs/T60qu1TqjP0RioVOqrbClp3NbvdGMDoScdSQBgZjoGmeps9pNU7CrFat51kNSzVLUhKx3Ybc3L3q25IKcAeIxHpXXpLcKnLVuK0q1KU66aFTmZF1bySpiYQhG0+GfFQ5GCDg4xmAPGtq8b7tm7Lj08u2tN1iaaor1QplTQ2EObktFYBGOR168gp8QYZ1Fr2s9U0hVqC3fQZk6WFEsqYQXZoJUN61nbtOCcBPGQIku0dKbm+lrhuu863J1G46nTXZCXDCClhhK0bck4HoMAcDPUmFrd0tr0h2eZ/Tp+ep5qcyw+2l9BX3AK1AjPGcceUBgkDTKuv3PYVFr8y0lp+ek0OuoT9ULxhWPTIOII00toM5bFgUagT7rLszIywacWySUKIJORkA45giCRzRyyicy6SDtPPT4mOjkEDrCUioezJ58/vMAbFe0AKAHI58IyvkIP6QjZzGB6kQmtO3ZjpuHEAZWkBaCOuf+UHPeKB/R++BZy438T90A/nFf7sAfPK4z/fHVeP8At8x/FVBbx/vhpf7dL/xUwXJ/SSq/t8x/FVBbo/vipf7dL/xUx7/j0ePj+Dx7/wAn1/kulqtqTRbIY9lmGjO1R9srZk08ApyRuWrolOfiTEJS9KvjViaTV61NNUugS/KZl78VKyyB4NIP1jjxPzPhDz7QE/adIvmVqVXpj9aqyZFIlpJw7JRCd6sOOHqs56JHlEJ3xftcuFSfpqo5YR/MyLA7thsDoEtjy8zkx4KMW/B65tLyPWevS3dNq0hvTZ9urLVLlmffnpYKQ4v81xpwYV1zlA9w4Hxhv0iRvbWG5MTdYYfU0oFS5p9KGpcH/u2Qcn4JHxMRq/OLmVlYGxJ8PEx7GnHGoltqHCvpaWAI6471OeY7FfSZSqdk5Y4yc2fUUrFCKzyShU56ydLqhMU2i0w3JdUovu3Z+pN7ZeVcA57tvxIz1/fEV3/qVfqq/JXA3dlUl6gCsJUw9sQlPHuhse5t9CDDk1h51Xun/aTn3JiML7/m5L9Zf3COK/B0k+R9DV6hXc0iU1bsiQriwnaKxTAJWfR6nGAr4ZA9Isv2UqfZkjY9RVY1enatTJioqdInWO7fll7EgtL4GSAAc+sUGMXS7Bv5MKx/tlf8JuMUZFh1HAzHPKzstMqcTLzDLymlbXA24FFCvI46H0MdCsADPmIq9pVqRZ+n116jNXJPKk1ztwvvsbWCrvAlS0nkeOfP0jLALNSk7KzbZclZhmYQFbSppwLAI6jI8Y5ZSu0ebnnJCVqsg/NtZ7xhuYSpaMdcpBzFTtLtRqbZeitxUDvZuUuGpTMxM0sCVUnvQ8hCELSrGCQUk5HkMZjwGqpZVv27ZFRtMzLV70ydC6xtl3EuLQMl0LHiAOAB1GcxO0jJci5Lrt22kNruCt0+mJdOGvaX0oK/gDyY8q47kqFQsObrWm6aTcdQCf5GgzgDDigoBQKwcAgZOCRFcdRr5sWqarU29qAhF496x7NPUabklLCG0g4W1kHB5ORgjPPjx1aJaj2JZ1FuecrNVRI1CsTC3RSZWVWGJQAKCUJzxk7h8AAIYGSZ5i6rzYtu9KxOU2jS8rTZHvqPMS00JgPLSzucCwD+avjwyIa1U1LupjsvSOoLL0iK6820VrMtlr3nig4RnjgecRpp5qBbNr9n2sWTWHJiSrU2zNezy5lVJDoeSAhQOANvrHFX77ttHZdldPnptxi45RDaXpR1hSMbXisnJx+acxOCMlvrfmHZuhyM28Ul1+WbcXgYG5SATx8THmPXfTGr9bstTU79JOSKp5LncHuO7CtpBX0Cs+H748qu1uYt7Rp6uSaUrmJKiJfaChlO4NJwT5jPMeRRa/P3H2dFXFV1sienbefefW2nu0hRbXnAzx9sYmRIc3UpGTk1Tk3OS0vLI+s846lKBzjlR4jjZuagv0yYqctWKe/JSzZcffamErQ2kAklRBOBgGKouo7rSzSWeuWRm5+y5czBqzLaFKSFlw7VOY8MZxnyIyCY6NOrw0vol46hM1B5Eja1ebal5FDLK0hbOFb0gDlP1v3xOCMkw6dXrdeoF8qrNJbZptiSyVstiZZBmKkvwcTzlCQR8MZB5PuyNctyUO2peWma9VJWnMTL4l2nZhexKnCCQnPQcJJ58oqLf8/ozS7f+lNMq9VJG45JxDksRMPbVAH3s7zgYHPyxzmJj1R1C0ynbXctW+J5AnX6c1MKR7KpfdOOtbkOIPQEE5HPp0hgZJpDqS2HElJQRu3Z4x55hBqoyTsoqbam5ZcujO51LySgY65UOOIrnpFrRbdC0uYtu8ajMylSk2FssKdllnvmCD3SgcdMHaPQCE9LO6PY6uNKO7UnbUOE4I+sIYGSy8q+1MsJfYcbdaWMpWhQUlQ8wR1ghkdn0BOi1qBIAH0c3gAfGCIJH2Y5pVO6WQec88j4mFsKSeoI8oSklgS6U+PP3mANllaQNw3DcOQOYFKCggggjeI3d5Sn9YQm82CUqHCt45EAbOgFxsep+6Mc96r4J/5xotSkuN7k5GTyB6eIjdpQU+opII2p5HzgCvlR7M6JyozU4bydbMw+49s+j0nG5RVj63rGKd2ZkSdRlZv8M3l+zvtvbfo9IztUFYzu9IsQvqn4xtF/7T1WNu7j9EVPY0ZztIn1e0iev+4GKs3ciqSW5US5bEkl7OFFWclQx1/dDAV2VtyipV9ulROSfoxOT/74svnnEEVI2zisJliVcZPLK2tdltKU7Te7p5zn6MT/ANUejbvZuRR7gptXF4OvmRm2pkNmnpTv2KCtud3GcdYsDBFn7R1O3Zu4+ho9lTu3beSDru0BbuG6qpXjdLssZ+ZU+WRIpUEZxxndz0hsVzsqIqgZBvl1ruiT/ixBzn/fizEEUi0VUPY9bx+UF/8A9KR/1xM+g2madLrZnaKmsrqwmZwzXeqlwyU5SlO3AJz9XrEiQRGAePeknXJ625uVtuqNUuqrSPZpp1nvUNqyM5T4gjI+cRzRNKa3b+nVWpdFudlN1VOb9serMxIpcSHCobgEHPBSCMnnJJiXoIkDTtSg3FKV6sTdw1yWq0k860qlsCSS2qSSlAChu8cq59IcYkZNMwqYTKsh5XCnA2As/E4zHTBAHOxJSjCt7Mqy0roVIbCT9oEarp0gtRUuSllKJySWUkn90dUEAIOScq4pKnJZlak42lSASMeWRGr0hJPOFx6Ul3FngqW0kk/MiOmCAOSoyEpPU9+QmmEuy0w0plxsj3VIUMFP2GIVc0AmESblDlNRbhl7Xdd3rpQSlQ25yU7s9M+nxBidYIAZddtarydgy1t2BU5ShPSYaal3JqW9ob7pP1kqSepOc58483SjTJm0vpSerM+mvVqrPB6cm3ZdKUjHRKE+AySfX0xEjQQyDjNKppGDT5TH+oT/APkbuU+RdVuck5dasYyppJOPDwjpggBqXxQK3VnaMuhVWTpqZWfbcng9JJe9plhncyMj3cwyLg041ErVlM2zNX9Iobfmpk1J1umBPfSzigWm0hJGCkAg+efSJiggDyrQo0rbttU+gyW/2any6Jdor+soJGMn1PUwR6sEAEISqQqXSCPP74IIAwslLqUZJGQeYUd/M/XEEEAYd/nmfifuMJlIS6tScpICenj1gggBQEqQ2T1JEKwQQBgfWPxjMEEAEEEEAEEEEAEEEEAEEEEAEEEEAEEEEAEEEEAEEEEAEEEEAEEEEAEEEEAEEEEAf//Z" alt="ريدكون للتعمير">
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div style="font-size:13px;color:var(--muted)" id="today-date"></div>
+    <button onclick="doLogout()" id="btn-logout" style="display:none;background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer">خروج ⏻</button>
+  </div>
+</header>
+
+<div id="page-home" class="page active">
+  <h1>لوحة الحضور والانصراف (سحابي)</h1>
+  <p class="subtitle">سجل العمال بوجههم مباشرة - متزامن عبر Supabase</p>
+  <div class="stats">
+    <div class="stat"><div class="num" id="stat-employees">0</div><div class="label">العمال المسجلون</div></div>
+    <div class="stat"><div class="num" id="stat-present">0</div><div class="label">حاضرون اليوم</div></div>
+    <div class="stat"><div class="num" id="stat-ops">0</div><div class="label">عمليات اليوم</div></div>
+  </div>
+  <button class="btn btn-green" onclick="startAttendance('in')">← تسجيل الدخول (حضور)</button>
+  <p style="text-align:center;font-size:13px;color:var(--muted);margin:-6px 0 16px">الكاميرا تبقى مفتوحة بعد كل تسجيل جاهزة للعامل التالي</p>
+  <button class="btn btn-red" onclick="startAttendance('out')">تسجيل الخروج (انصراف) →</button>
+  <p style="text-align:center;font-size:13px;color:var(--muted);margin:-6px 0 16px">سجل انصراف العمال واحداً تلو الآخر دون إغلاق</p>
+</div>
+
+<div id="page-employees" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div>
+      <h1>إدارة العمال والموظفين</h1>
+      <p class="subtitle" style="margin:0">سجل العمال بالاسم والرقم والتقاط صورة الوجه</p>
+    </div>
+  </div>
+  <button class="btn btn-green btn-sm" onclick="openAddEmployee()" style="margin-bottom:16px">+ عامل جديد</button>
+  <div id="employees-list" class="card" style="padding:0">
+    <div class="empty" id="no-employees">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <p>لا يوجد عمال بعد</p>
+      <p style="font-size:13px;margin-top:6px">اضغط «عامل جديد» لتسجيل أول عامل</p>
+    </div>
+  </div>
+</div>
+
+<div id="page-records" class="page">
+  <h1>السجلات والتقارير</h1>
+  <p class="subtitle">كل عمليات الحضور والانصراف المتزامنة سحابياً</p>
+  <div class="export-grid">
+    <button class="export-btn" onclick="exportExcel()">Excel الكل</button>
+    <button class="export-btn" onclick="exportCSV()">CSV الكل</button>
+  </div>
+  <div class="export-grid">
+    <button class="export-btn" onclick="exportExcelByShift('employee')">Excel الموظفين</button>
+    <button class="export-btn" onclick="exportCSVByShift('employee')">CSV الموظفين</button>
+  </div>
+  <div class="export-grid">
+    <button class="export-btn" onclick="exportExcelByShift('sec_morning')">Excel أمن صباحي</button>
+    <button class="export-btn" onclick="exportCSVByShift('sec_morning')">CSV أمن صباحي</button>
+  </div>
+  <div class="export-grid">
+    <button class="export-btn" onclick="exportExcelByShift('sec_night')">Excel أمن مسائي</button>
+    <button class="export-btn" onclick="exportCSVByShift('sec_night')">CSV أمن مسائي</button>
+  </div>
+  <div class="card">
+    <label>تصفية السجلات</label>
+    <label>التاريخ</label>
+    <input type="date" id="filter-date" onchange="renderRecords()">
+    <label>العامل</label>
+    <select id="filter-employee" onchange="renderRecords()"><option value="">كل العمال</option></select>
+    <label>النوع</label>
+    <select id="filter-type" onchange="renderRecords()">
+      <option value="">الكل</option>
+      <option value="in">حضور</option>
+      <option value="out">انصراف</option>
+    </select>
+  </div>
+  <div class="share-above-table">
+    <h3>جدول السجلات</h3>
+    <button class="clear-btn" onclick="clearAllLogs()">مسح السجلات</button>
+  </div>
+  <div class="card" style="padding:0">
+    <div class="table-wrap">
+      <table class="records-table">
+        <thead>
+          <tr>
+            <th>الاسم</th><th>الرقم</th><th>الحالة</th><th>التاريخ</th><th>الوقت</th><th>ساعات العمل</th><th>التأخير</th>
+          </tr>
+        </thead>
+        <tbody id="records-list"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="page-settings" class="page">
+  <h1>الإعدادات</h1>
+  <p class="subtitle">حالة الاتصال بقاعدة البيانات السحابية</p>
+  <div class="card">
+    <div class="setting-row">
+      <label>أوقات الدوام الرسمية</label>
+      <div style="font-size:14px;line-height:2.2">
+        🧑‍💼 الموظفون: 8:00 صباحاً — 5:00 مساءً<br>
+        🛡️ الأمن (الوردية الصباحية): 8:00 صباحاً — 8:00 مساءً<br>
+        🛡️ الأمن (الوردية المسائية): 8:00 مساءً — 8:00 صباحاً
+      </div>
+    </div>
+    <div class="setting-hint">تُحسب دقائق التأخير تلقائياً عند تسجيل الحضور (فترة سماح 5 دقائق). للظلام استخدم زر الفلاش. التسجيل يقبل الوجه الحي فقط بعد رمشة سريعة.</div>
+  </div>
+</div>
+
+<div class="modal" id="modal-add">
+  <div class="modal-content">
+    <h2 style="margin-bottom:16px">إضافة عامل جديد</h2>
+    <label>الاسم الكامل</label>
+    <input type="text" id="emp-name" placeholder="مثال: حمادة علي المهدي محمد" autocomplete="off">
+    <label>الوظيفة</label>
+    <input type="text" id="emp-id" placeholder="مثال: أمن إداري / محاسب / مهندس" autocomplete="off">
+    <label>نوع الدوام</label>
+    <select id="emp-shift">
+      <option value="employee">موظف (8 صباحاً - 5 مساءً)</option>
+      <option value="sec_morning">أمن - وردية صباحية (8 صباحاً - 8 مساءً)</option>
+      <option value="sec_night">أمن - وردية مسائية (8 مساءً - 8 صباحاً)</option>
+    </select>
+    <div class="camera-box">
+      <div class="flash-ring" id="flash-ring-reg">
+        <video id="video-reg" autoplay muted playsinline></video>
+      </div>
+      <canvas id="canvas-reg" style="display:none"></canvas>
+      <button class="btn btn-flash" id="btn-flash-reg" type="button" onclick="toggleFlash('reg')">تشغيل الفلاش / إضاءة الليل</button>
+      <div id="face-status" class="status-msg loading">جاري تحميل نماذج التعرف على الوجه...</div>
+      <button class="btn btn-green" id="btn-capture" onclick="captureFace()" disabled>التقاط صورة الوجه وحفظ العامل</button>
+      <button class="btn btn-outline" onclick="stopCamera(); closeModal('modal-add')">إلغاء</button>
+    </div>
+    <div id="reg-msg"></div>
+  </div>
+</div>
+
+<div class="modal" id="modal-attend">
+  <div class="modal-content">
+    <h2 id="attend-title" style="margin-bottom:8px">تسجيل الحضور</h2>
+    <p style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:12px">الكاميرا مفتوحة باستمرار • ارمش مرة سريعة ثم وجّه الوجه</p>
+    <div class="camera-box">
+      <div class="flash-ring" id="flash-ring-attend">
+        <video id="video-attend" autoplay muted playsinline></video>
+      </div>
+      <canvas id="canvas-attend" style="display:none"></canvas>
+      <button class="btn btn-flash" id="btn-flash-attend" type="button" onclick="toggleFlash('attend')">تشغيل الفلاش / إضاءة الليل</button>
+      <div id="attend-status" class="status-msg loading">افتح الكاميرا ووجّه وجهك...</div>
+      <button class="btn btn-outline" onclick="stopCamera(); closeModal('modal-attend')">إغلاق الكاميرا</button>
+    </div>
+  </div>
+</div>
+
+<nav>
+  <button id="nav-home" class="active" onclick="showPage('home')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    الرئيسية
+  </button>
+  <button id="nav-employees" onclick="showPage('employees')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    العمال
+  </button>
+  <button id="nav-records" onclick="showPage('records')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    السجلات
+  </button>
+  <button id="nav-settings" onclick="showPage('settings')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l-.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    الإعدادات
+  </button>
+</nav>
+
+<script>
+/* ========== SUPABASE REST API INTEGRATION ========== */
+const SUPABASE_URL = 'https://mxehqntxuefiopuwudew.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_jM9C82gr_dcQKu6L3JfwEQ_gJLOE0TI';
+
+// ===== نظام تسجيل الدخول والجلسات =====
+let authToken = localStorage.getItem('sb_token') || null;
+let authEmail = localStorage.getItem('sb_email') || '';
+
+function dbHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + (authToken || SUPABASE_KEY),
+    'Prefer': 'return=representation'
+  };
+}
+
+let employees = [];
+let records = [];
+let modelsLoaded = false;
+let currentStream = null;
+let attendType = 'in';
+let detectionInterval = null;
+let regInterval = null;
+let audioCtx = null;
+let isProcessing = false;
+let lastMatchedId = null;
+let lastMatchTime = 0;
+let torchOn = false;
+let liveness = { blinked: false, samples: 0, ears: [] };
+
+function dist(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+function eyeAspect(lm, i) {
+  const p1 = lm[i], p2 = lm[i + 1], p3 = lm[i + 2], p4 = lm[i + 3], p5 = lm[i + 4], p6 = lm[i + 5];
+  if (!p1 || !p4) return 0.3;
+  return (dist(p2, p6) + dist(p3, p5)) / (2 * (dist(p1, p4) || 1));
+}
+function resetLiveness() {
+  liveness = { blinked: false, samples: 0, ears: [] };
+}
+function feedLiveness(landmarks) {
+  const lm = landmarks.positions || landmarks._positions || landmarks;
+  const ear = (eyeAspect(lm, 36) + eyeAspect(lm, 42)) / 2;
+  liveness.ears = (liveness.ears || []).concat(ear).slice(-12);
+  liveness.samples++;
+  if (liveness.ears.length >= 4) {
+    const sorted = liveness.ears.slice().sort(function(a, b) { return a - b; });
+    const open = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.75))] || ear;
+    const recentMin = Math.min.apply(null, liveness.ears.slice(-6));
+    if (recentMin < open * 0.9 && ear > recentMin + 0.012) liveness.blinked = true;
+  }
+  return ear;
+}
+function isLive() {
+  return liveness.blinked && liveness.samples > 2;
+}
+function liveHint() {
+  if (!liveness.samples) return 'وجّه وجهك ثم ارمش بسرعة';
+  if (!liveness.blinked) return 'ارمش مرة سريعة للتأكيد (صورة ثابتة مرفوضة)';
+  return 'وجه حي ✓ — جاهز';
+}
+
+async function setTorch(on) {
+  const track = currentStream && currentStream.getVideoTracks()[0];
+  if (!track || !track.applyConstraints) return false;
+  try {
+    await track.applyConstraints({ advanced: [{ torch: !!on }] });
+    return true;
+  } catch (e) { return false; }
+}
+function paintFlash(mode, on) {
+  const ring = document.getElementById(mode === 'reg' ? 'flash-ring-reg' : 'flash-ring-attend');
+  const btn = document.getElementById(mode === 'reg' ? 'btn-flash-reg' : 'btn-flash-attend');
+  const modal = document.getElementById(mode === 'reg' ? 'modal-add' : 'modal-attend');
+  if (ring) ring.classList.toggle('on', on);
+  if (btn) {
+    btn.classList.toggle('on', on);
+    btn.textContent = on ? 'إيقاف الفلاش' : 'تشغيل الفلاش / إضاءة الليل';
+  }
+  if (modal) modal.classList.toggle('lit', on);
+}
+async function toggleFlash(mode) {
+  torchOn = !torchOn;
+  paintFlash('reg', torchOn);
+  paintFlash('attend', torchOn);
+  const ok = await setTorch(torchOn);
+  if (torchOn && !ok) {
+    const el = document.getElementById(mode === 'reg' ? 'face-status' : 'attend-status');
+    if (el) el.textContent = 'ضوء الكاميرا غير مدعوم — إضاءة الشاشة تعمل';
+  }
+}
+
+
+/* ===== Offline-first: قائمة انتظار ومزامنة عند عودة الإنترنت (إضافة فقط) ===== */
+function loadLocalEmployees() {
+  try { return JSON.parse(localStorage.getItem('employees') || '[]'); } catch (e) { return []; }
+}
+function loadLocalRecords() {
+  try { return JSON.parse(localStorage.getItem('records') || '[]'); } catch (e) { return []; }
+}
+function saveLocalEmployees() {
+  try { localStorage.setItem('employees', JSON.stringify(employees)); } catch (e) {}
+}
+function saveLocalRecords() {
+  try { localStorage.setItem('records', JSON.stringify(records)); } catch (e) {}
+}
+function getOfflineQueue() {
+  try { return JSON.parse(localStorage.getItem('offline_records_queue') || '[]'); } catch (e) { return []; }
+}
+function setOfflineQueue(q) {
+  try { localStorage.setItem('offline_records_queue', JSON.stringify(q || [])); } catch (e) {}
+}
+function enqueueOfflineRecord(rec) {
+  const q = getOfflineQueue();
+  q.push(rec);
+  setOfflineQueue(q);
+}
+async function flushOfflineQueue() {
+  if (!navigator.onLine || !authToken) return;
+  let q = getOfflineQueue();
+  if (!q.length) return;
+  const remain = [];
+  for (let i = 0; i < q.length; i++) {
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/records', {
+        method: 'POST',
+        headers: dbHeaders(),
+        body: JSON.stringify(q[i])
+      });
+      if (!res.ok && res.status !== 409) remain.push(q[i]);
+    } catch (e) {
+      remain.push(q[i]);
+    }
+  }
+  setOfflineQueue(remain);
+  if (remain.length < q.length) {
+    try { await fetchCloudData(); } catch (e) {}
+  }
+}
+function applyLocalDataAndRefreshUI() {
+  employees = loadLocalEmployees();
+  records = loadLocalRecords();
+  try { updateStats(); } catch (e) {}
+  try {
+    if (document.getElementById('page-employees') && document.getElementById('page-employees').classList.contains('active')) renderEmployees();
+    if (document.getElementById('page-records') && document.getElementById('page-records').classList.contains('active')) renderRecords();
+  } catch (e) {}
+}
+
+// جلب البيانات من Supabase سحابياً
+async function fetchCloudData() {
+  // Offline-first: اعرض البيانات المحلية فوراً حتى يعمل التنقل والحضور بدون إنترنت
+  if (!navigator.onLine) {
+    applyLocalDataAndRefreshUI();
+    return;
+  }
+  try {
+    const resEmp = await fetch(SUPABASE_URL + '/rest/v1/employees?select=*', { headers: dbHeaders() });
+    if (resEmp.status === 401) { applyLocalDataAndRefreshUI(); return; }
+    if (resEmp.ok) {
+      const data = await resEmp.json();
+      employees = (data || []).map(e => ({ ...e, id: e.worker_id || e.id }));
+      localStorage.setItem('employees', JSON.stringify(employees));
+    }
+    const resRec = await fetch(SUPABASE_URL + '/rest/v1/records?select=*', { headers: dbHeaders() });
+    if (resRec.status === 401) { applyLocalDataAndRefreshUI(); return; }
+    if (resRec.ok) {
+      const data = await resRec.json();
+      records = (data || []).map(r => ({ ...r, id: r.worker_id || r.id }));
+      localStorage.setItem('records', JSON.stringify(records));
+    }
+    updateStats();
+    if (document.getElementById('page-employees').classList.contains('active')) renderEmployees();
+    if (document.getElementById('page-records').classList.contains('active')) renderRecords();
+    flushOfflineQueue();
+  } catch (e) {
+    // العودة للذاكرة المحلية عند انقطاع الإنترنت
+    employees = JSON.parse(localStorage.getItem('employees') || '[]');
+    records = JSON.parse(localStorage.getItem('records') || '[]');
+    updateStats();
+    if (document.getElementById('page-employees').classList.contains('active')) renderEmployees();
+    if (document.getElementById('page-records').classList.contains('active')) renderRecords();
+  }
+}
+
+function playSuccessSound() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const now = audioCtx.currentTime;
+    function beep(freq, start, dur, vol) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, now + start);
+      gain.gain.exponentialRampToValueAtTime(vol, now + start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + start + dur);
+      osc.start(now + start);
+      osc.stop(now + start + dur + 0.02);
+    }
+    beep(880, 0, 0.18, 0.45);
+    beep(1320, 0.16, 0.22, 0.4);
+  } catch (e) {}
+}
+
+function showSuccessFeedback() {
+  try {
+    const el = document.getElementById('success-check');
+    if (el) {
+      el.classList.add('show');
+      clearTimeout(window.__successCheckTimer);
+      window.__successCheckTimer = setTimeout(function() {
+        el.classList.remove('show');
+      }, 1400);
+    }
+  } catch (e) {}
+  playSuccessSound();
+}
+
+async function loadModels() {
+  const statusEl = document.getElementById('face-status');
+  try {
+    const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.14/model/';
+    await Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+    ]);
+    modelsLoaded = true;
+    if (statusEl) {
+      statusEl.className = 'status-msg success';
+      statusEl.textContent = 'النماذج جاهزة ✓ - وجّه وجهك ثم ارمش';
+    }
+  } catch (e) {
+    modelsLoaded = false;
+    if (statusEl) {
+      statusEl.className = 'status-msg error';
+      statusEl.textContent = 'فشل تحميل النماذج. تحقق من الاتصال بالإنترنت';
+    }
+  }
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const msg = document.getElementById('login-msg');
+  if (!email || !pass) { msg.innerHTML = '<div class="status-msg error">أدخل البريد وكلمة المرور</div>'; return; }
+  msg.innerHTML = '<div class="status-msg loading">جاري التحقق...</div>';
+
+  function saveSession(token, mail) {
+    authToken = token || authToken || 'offline-session';
+    authEmail = mail || email;
+    try {
+      if (token && token !== 'offline-session') localStorage.setItem('sb_token', token);
+      localStorage.setItem('sb_email', authEmail);
+      localStorage.setItem('sb_logged_in', '1');
+      // بصمة بسيطة للتحقق دون إنترنت (بريد + كلمة المرور) على نفس الجهاز فقط
+      localStorage.setItem('sb_fp', btoa(unescape(encodeURIComponent((authEmail || '').toLowerCase() + '\n' + pass))));
+    } catch (e) {}
+  }
+
+  function enterLocalSession(token, mail) {
+    saveSession(token || localStorage.getItem('sb_token') || 'offline-session', mail || localStorage.getItem('sb_email') || email);
+    document.getElementById('btn-logout').style.display = 'inline-block';
+    document.getElementById('modal-login').classList.remove('active');
+    msg.innerHTML = '';
+    try { applyLocalDataAndRefreshUI(); } catch (e) {}
+  }
+
+  function canEnterOffline() {
+    const savedEmail = (localStorage.getItem('sb_email') || '').trim().toLowerCase();
+    const wasLogged = localStorage.getItem('sb_logged_in') === '1';
+    const savedToken = localStorage.getItem('sb_token') || '';
+    const fp = localStorage.getItem('sb_fp') || '';
+    const tryFp = btoa(unescape(encodeURIComponent(email.toLowerCase() + '\n' + pass)));
+    const emailOk = !savedEmail || savedEmail === email.toLowerCase();
+    const fpOk = fp && fp === tryFp;
+    let hasLocalData = false;
+    try {
+      hasLocalData = (JSON.parse(localStorage.getItem('employees') || '[]').length > 0)
+        || (JSON.parse(localStorage.getItem('records') || '[]').length > 0);
+    } catch (e) {}
+    return fpOk || (emailOk && (wasLogged || !!savedToken)) || (emailOk && hasLocalData && wasLogged);
+  }
+
+  // بدون إنترنت
+  if (!navigator.onLine) {
+    if (canEnterOffline()) {
+      enterLocalSession(localStorage.getItem('sb_token'), localStorage.getItem('sb_email') || email);
+      return;
+    }
+    msg.innerHTML = '<div class="status-msg error">لا يوجد إنترنت ولا توجد جلسة محفوظة على هذا المتصفح. اتصل بالنت، سجّل الدخول من نفس الرابط، ولا تضغط «خروج»، ثم أعد المحاولة بدون نت</div>';
+    return;
+  }
+
+  try {
+    const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+      body: JSON.stringify({ email, password: pass })
+    });
+    if (!res.ok) throw new Error('bad credentials');
+    const data = await res.json();
+    const token = data.access_token;
+    const mail = (data.user && data.user.email) ? data.user.email : email;
+    saveSession(token, mail);
+    // تأكيد أن الحفظ نجح
+    if (localStorage.getItem('sb_logged_in') !== '1') {
+      msg.innerHTML = '<div class="status-msg error">المتصفح منع حفظ الجلسة محلياً (جرّب متصفحاً عادياً وليس وضع التصفح الخاص)</div>';
+      return;
+    }
+    document.getElementById('btn-logout').style.display = 'inline-block';
+    document.getElementById('modal-login').classList.remove('active');
+    msg.innerHTML = '';
+    fetchCloudData();
+  } catch (e) {
+    if (canEnterOffline()) {
+      enterLocalSession(localStorage.getItem('sb_token'), localStorage.getItem('sb_email') || email);
+      return;
+    }
+    msg.innerHTML = '<div class="status-msg error">بيانات الدخول غير صحيحة أو لا يوجد اتصال</div>';
+  }
+}
+
+function doLogout() {
+  stopCamera();
+  // لا نعرض شاشة الدخول — التطبيق يعمل بدون بوابة دخول
+  authToken = localStorage.getItem('sb_token') || 'offline-session';
+  try { applyLocalDataAndRefreshUI(); } catch (e) {}
+  if (navigator.onLine) {
+    try { fetchCloudData(); } catch (e) {}
+  }
+}
+
+function checkAuth() {
+  // تجاوز شاشة الدخول بالكامل — الدخول مباشرة للوحة التحكم
+  try {
+    authToken = localStorage.getItem('sb_token') || authToken || 'offline-session';
+    authEmail = localStorage.getItem('sb_email') || authEmail || '';
+  } catch (e) {
+    authToken = authToken || 'offline-session';
+  }
+  const loginModal = document.getElementById('modal-login');
+  if (loginModal) loginModal.classList.remove('active');
+  const btnOut = document.getElementById('btn-logout');
+  if (btnOut) btnOut.style.display = 'none';
+  try { applyLocalDataAndRefreshUI(); } catch (e) {}
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'employees') renderEmployees();
+  if (name === 'records') renderRecords();
+  if (name === 'home') updateStats();
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+  document.getElementById(id).classList.remove('lit');
+  stopCamera();
+  isProcessing = false;
+  lastMatchedId = null;
+  torchOn = false;
+  paintFlash('reg', false);
+  paintFlash('attend', false);
+}
+
+async function startCamera(videoId) {
+  stopCamera();
+  try {
+    currentStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+      audio: false
+    });
+    const video = document.getElementById(videoId);
+    video.srcObject = currentStream;
+    await new Promise(resolve => {
+      video.onloadedmetadata = () => video.play().then(resolve).catch(resolve);
+    });
+    if (torchOn) await setTorch(true);
+    return true;
+  } catch (e) {
+    alert('لا يمكن الوصول إلى الكاميرا. تأكد من منح الإذن في المتصفح.');
+    return false;
+  }
+}
+
+function stopCamera() {
+  if (detectionInterval) { clearInterval(detectionInterval); detectionInterval = null; }
+  if (regInterval) { clearInterval(regInterval); regInterval = null; }
+  if (currentStream) {
+    currentStream.getTracks().forEach(t => t.stop());
+    currentStream = null;
+  }
+}
+
+async function openAddEmployee() {
+  document.getElementById('emp-name').value = '';
+  document.getElementById('emp-id').value = '';
+  document.getElementById('reg-msg').innerHTML = '';
+  resetLiveness();
+  const statusEl = document.getElementById('face-status');
+  statusEl.className = 'status-msg loading';
+  statusEl.textContent = 'جاري تحميل النماذج والكاميرا...';
+  document.getElementById('btn-capture').disabled = true;
+  document.getElementById('modal-add').classList.add('active');
+  if (!modelsLoaded) await loadModels();
+  await startCamera('video-reg');
+  statusEl.className = 'status-msg loading';
+  statusEl.textContent = 'وجّه وجهك ثم ارمش مرة سريعة';
+  regInterval = setInterval(async () => {
+    const video = document.getElementById('video-reg');
+    if (!video || video.readyState < 2 || !modelsLoaded) return;
+    try {
+      const det = await faceapi.detectSingleFace(
+        video,
+        new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.25 })
+      ).withFaceLandmarks();
+      if (!det) {
+        statusEl.className = 'status-msg loading';
+        statusEl.textContent = 'لا يوجد وجه. قرّب الوجه أو شغّل الفلاش';
+        document.getElementById('btn-capture').disabled = true;
+        return;
+      }
+      feedLiveness(det.landmarks);
+      const ok = isLive();
+      document.getElementById('btn-capture').disabled = !ok;
+      statusEl.className = ok ? 'status-msg success' : 'status-msg loading';
+      statusEl.textContent = ok ? 'وجه حي ✓ — اضغط التقاط' : liveHint();
+    } catch (e) {}
+  }, 150);
+}
+
+async function captureFace() {
+  const name = document.getElementById('emp-name').value.trim();
+  const id = document.getElementById('emp-id').value.trim();
+  const msgEl = document.getElementById('reg-msg');
+  const statusEl = document.getElementById('face-status');
+  const btn = document.getElementById('btn-capture');
+  if (!name || !id) { msgEl.innerHTML = '<div class="status-msg error">أدخل الاسم والرقم الوظيفي</div>'; return; }
+  if (employees.some(e => e.id === id)) { msgEl.innerHTML = '<div class="status-msg error">هذا الرقم مسجل مسبقاً</div>'; return; }
+  if (!isLive()) { msgEl.innerHTML = '<div class="status-msg error">ارمش مرة سريعة. الصور الثابتة مرفوضة</div>'; return; }
+  if (!modelsLoaded) { msgEl.innerHTML = '<div class="status-msg error">النماذج لم تُحمّل بعد</div>'; return; }
+  const video = document.getElementById('video-reg');
+  if (!video.videoWidth) { msgEl.innerHTML = '<div class="status-msg error">الكاميرا غير جاهزة</div>'; return; }
+  btn.disabled = true;
+  statusEl.className = 'status-msg loading';
+  statusEl.textContent = 'جاري استخراج البصمة والحفظ سحابياً...';
+  try {
+    const canvas = document.getElementById('canvas-reg');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    const detection = await faceapi.detectSingleFace(canvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.35 })).withFaceLandmarks().withFaceDescriptor();
+    if (!detection) {
+      statusEl.className = 'status-msg error';
+      statusEl.textContent = 'لم يتم اكتشاف وجه واضح، حاول مرة أخرى';
+      btn.disabled = !isLive();
+      return;
+    }
+    const descriptor = Array.from(detection.descriptor);
+    const photo = canvas.toDataURL('image/jpeg', 0.70);
+    const shift = document.getElementById('emp-shift').value;
+    const newEmp = { name, worker_id: id, photo, descriptor, shift };
+
+    // رفع العامل لقاعدة بيانات Supabase
+    const res = await fetch(SUPABASE_URL + '/rest/v1/employees', {
+      method: 'POST',
+      headers: dbHeaders(),
+      body: JSON.stringify(newEmp)
+    });
+
+    if (res.ok) {
+      statusEl.className = 'status-msg success';
+      statusEl.textContent = 'تم حفظ العامل سحابياً بنجاح ✓';
+      fetchCloudData();
+      setTimeout(() => { closeModal('modal-add'); showPage('employees'); }, 1500);
+    } else {
+      throw new Error('فشل الحفظ في السحاب');
+    }
+  } catch (err) {
+    statusEl.className = 'status-msg error';
+    statusEl.textContent = 'حدث خطأ أثناء الحفظ';
+    btn.disabled = false;
+  }
+}
+
+const SHIFTS = {
+  employee:    { label: 'موظف',        start: 8 * 60,  end: 17 * 60 },
+  sec_morning: { label: 'أمن - صباحية', start: 8 * 60,  end: 20 * 60 },
+  sec_night:   { label: 'أمن - مسائية', start: 20 * 60, end: 8 * 60 }
+};
+const GRACE_MINUTES = 5; // فترة السماح قبل احتساب التأخير
+
+function fmtDur(min) {
+  if (min == null || isNaN(min)) return '—';
+  const h = Math.floor(min / 60), m = min % 60;
+  return h + 'س ' + m + 'د';
+}
+
+function shiftOf(emp) {
+  return SHIFTS[emp && emp.shift] || SHIFTS.employee;
+}
+
+// إقران كل حضور مع أقرب انصراف بعده لحساب ساعات العمل
+function buildWorkPairs() {
+  const pairs = {};
+  const byWorker = {};
+  records.forEach((r, i) => { (byWorker[r.id] = byWorker[r.id] || []).push(i); });
+  Object.keys(byWorker).forEach(wid => {
+    const idxs = byWorker[wid].sort((a, b) => new Date(records[a].time) - new Date(records[b].time));
+    let pendingIn = null;
+    idxs.forEach(i => {
+      const r = records[i];
+      if (r.type === 'in') pendingIn = i;
+      else if (r.type === 'out' && pendingIn !== null) {
+        pairs[pendingIn] = Math.max(0, Math.round((new Date(r.time) - new Date(records[pendingIn].time)) / 60000));
+        pendingIn = null;
+      }
+    });
+  });
+  return pairs;
+}
+
+async function startAttendance(type) {
+  if (employees.length === 0) {
+    alert('لا يوجد عمال مسجلين. أضف عاملاً أولاً.');
+    showPage('employees');
+    return;
+  }
+  attendType = type;
+  isProcessing = false;
+  lastMatchedId = null;
+  lastMatchTime = 0;
+  resetLiveness();
+  document.getElementById('attend-title').textContent = type === 'in' ? 'تسجيل الحضور - سحابي' : 'تسجيل الانصراف - سحابي';
+  document.getElementById('attend-status').className = 'status-msg loading';
+  document.getElementById('attend-status').textContent = 'جاري فتح الكاميرا...';
+  document.getElementById('modal-attend').classList.add('active');
+  if (!modelsLoaded) await loadModels();
+  await startCamera('video-attend');
+  document.getElementById('attend-status').textContent = 'ارمش مرة سريعة ثم وجّه الوجه...';
+
+  detectionInterval = setInterval(async () => {
+    if (isProcessing) return;
+    try {
+      const video = document.getElementById('video-attend');
+      if (!video || video.readyState < 2 || !video.videoWidth) return;
+      const detection = await faceapi.detectSingleFace(
+        video,
+        new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.25 })
+      ).withFaceLandmarks().withFaceDescriptor();
+      if (!detection) {
+        document.getElementById('attend-status').className = 'status-msg loading';
+        document.getElementById('attend-status').textContent = 'لا يوجد وجه. شغّل الفلاش في الظلام';
+        return;
+      }
+
+      feedLiveness(detection.landmarks);
+      if (!isLive()) {
+        document.getElementById('attend-status').className = 'status-msg loading';
+        document.getElementById('attend-status').textContent = liveHint();
+        return;
+      }
+
+      let bestMatch = null;
+      let bestDistance = 0.55;
+      for (const emp of employees) {
+        if (!emp.descriptor) continue;
+        const d = faceapi.euclideanDistance(detection.descriptor, emp.descriptor);
+        if (d < bestDistance) { bestDistance = d; bestMatch = emp; }
+      }
+      if (bestMatch) {
+        const nowTs = Date.now();
+        if (lastMatchedId === bestMatch.id && (nowTs - lastMatchTime) < 4000) return;
+        isProcessing = true;
+        lastMatchedId = bestMatch.id;
+        lastMatchTime = nowTs;
+        const today = new Date().toISOString().slice(0, 10);
+        const alreadyExists = records.some(r => r.id === bestMatch.id && r.date === today && r.type === attendType);
+        if (alreadyExists) {
+          document.getElementById('attend-status').className = 'status-msg error';
+          document.getElementById('attend-status').textContent = 'تم تسجيل ' + (attendType === 'in' ? 'الحضور' : 'الانصراف') + ' مسبقاً اليوم';
+          resetLiveness();
+          setTimeout(() => { isProcessing = false; document.getElementById('attend-status').textContent = 'جاهز للعامل التالي...'; }, 2000);
+          return;
+        }
+        const now = new Date();
+        let late_minutes = 0;
+        if (attendType === 'in') {
+          const sh = shiftOf(bestMatch);
+          const nowMin = now.getHours() * 60 + now.getMinutes();
+          late_minutes = Math.max(0, nowMin - sh.start - GRACE_MINUTES);
+        }
+        const newRecord = {
+          name: bestMatch.name, worker_id: bestMatch.id, type: attendType,
+          time: now.toISOString(), date: today,
+          timeStr: now.toTimeString().slice(0, 8), method: 'ريدكون',
+          late_minutes: late_minutes
+        };
+
+        // رفع سجل الحضور إلى Supabase — مع حفظ محلي وقائمة انتظار عند انقطاع الإنترنت
+        let savedOnline = false;
+        if (navigator.onLine) {
+          try {
+            const resSave = await fetch(SUPABASE_URL + '/rest/v1/records', {
+              method: 'POST',
+              headers: dbHeaders(),
+              body: JSON.stringify(newRecord)
+            });
+            savedOnline = resSave.ok;
+          } catch (e) { savedOnline = false; }
+        }
+        if (!savedOnline) {
+          enqueueOfflineRecord(newRecord);
+        }
+        // دائماً حدّث الذاكرة المحلية لتعمل الواجهة والتنقل بدون إنترنت
+        const localRec = Object.assign({}, newRecord, { id: newRecord.worker_id });
+        records.push(localRec);
+        saveLocalRecords();
+        updateStats();
+
+        showSuccessFeedback();
+        document.getElementById('attend-status').className = 'status-msg success';
+        let attendMsg = '✓ تم حفظ ' + (attendType === 'in' ? 'الحضور' : 'الانصراف') + ': ' + bestMatch.name;
+        if (attendType === 'in') attendMsg += late_minutes > 0 ? ' — تأخير ' + fmtDur(late_minutes) : ' — في الموعد ✓';
+        if (!savedOnline) attendMsg += ' (محلياً — يُرفع عند الاتصال)';
+        document.getElementById('attend-status').textContent = attendMsg;
+        resetLiveness();
+        if (savedOnline) fetchCloudData();
+        setTimeout(() => { isProcessing = false; document.getElementById('attend-status').textContent = 'جاهز للعامل التالي — ارمش مرة سريعة'; }, 1800);
+      }
+    } catch (e) { isProcessing = false; }
+  }, 200);
+}
+
+function renderEmployees() {
+  const list = document.getElementById('employees-list');
+  const noEmp = document.getElementById('no-employees');
+  if (employees.length === 0) {
+    list.innerHTML = ''; list.appendChild(noEmp); noEmp.style.display = 'block'; return;
+  }
+  noEmp.style.display = 'none';
+  list.innerHTML = employees.map((e) =>
+    '<div class="employee-item">' +
+      '<img class="emp-avatar" src="' + (e.photo || '') + '" alt="">' +
+      '<div class="emp-info"><div class="emp-name">' + e.name + '</div><div class="emp-id">' + e.id + (e.shift && SHIFTS[e.shift] ? ' • ' + SHIFTS[e.shift].label : '') + '</div></div>' +
+      '<button class="btn btn-outline btn-sm" style="color:var(--red);border-color:var(--red)" onclick="deleteEmployee(\'' + e.id + '\')">حذف</button>' +
+    '</div>'
+  ).join('');
+}
+
+async function deleteEmployee(id) {
+  if (confirm('هل تريد حذف هذا العامل نهائياً من السحاب؟')) {
+    await fetch(SUPABASE_URL + '/rest/v1/employees?worker_id=eq.' + encodeURIComponent(id), { method: 'DELETE', headers: dbHeaders() });
+    fetchCloudData();
+  }
+}
+
+function getFilteredRecords() {
+  const dateFilter = document.getElementById('filter-date').value;
+  const empFilter = document.getElementById('filter-employee').value;
+  const typeFilter = document.getElementById('filter-type').value;
+  let filtered = records.slice();
+  if (dateFilter) filtered = filtered.filter(r => r.date === dateFilter);
+  if (empFilter) filtered = filtered.filter(r => r.id === empFilter);
+  if (typeFilter) filtered = filtered.filter(r => r.type === typeFilter);
+  return filtered;
+}
+
+function renderRecords() {
+  const sel = document.getElementById('filter-employee');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">كل العمال</option>';
+  employees.forEach(e => sel.innerHTML += '<option value="' + e.id + '">' + e.name + '</option>');
+  sel.value = current;
+  const filtered = getFilteredRecords();
+  const tbody = document.getElementById('records-list');
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">لا توجد سجلات</td></tr>';
+    return;
+  }
+  const pairs = buildWorkPairs();
+  tbody.innerHTML = filtered.map(r => {
+    const statusText = r.type === 'in' ? 'حضور' : 'انصراف';
+    const badgeClass = r.type === 'in' ? 'badge-in' : 'badge-out';
+    const workCell = r.type === 'in' ? fmtDur(pairs[records.indexOf(r)]) : '—';
+    const lateCell = r.type === 'in' ? (r.late_minutes > 0 ? fmtDur(r.late_minutes) : 'في الموعد') : '—';
+    return '<tr><td>' + r.name + '</td><td>' + r.id + '</td><td><span class="badge ' + badgeClass + '">' + statusText + '</span></td><td>' + r.date + '</td><td>' + r.timeStr + '</td><td>' + workCell + '</td><td>' + lateCell + '</td></tr>';
+  }).join('');
+}
+
+function updateStats() {
+  document.getElementById('stat-employees').textContent = employees.length;
+  const today = new Date().toISOString().slice(0, 10);
+  const todayRecords = records.filter(r => r.date === today);
+  document.getElementById('stat-ops').textContent = todayRecords.length;
+  const presentIds = {};
+  todayRecords.forEach(r => { if (r.type === 'in') presentIds[r.id] = true; });
+  document.getElementById('stat-present').textContent = Object.keys(presentIds).length;
+}
+
+function clearAllLogs() {
+  if (!confirm('هل أنت متأكد من مسح جميع السجلات؟')) return;
+  fetch(SUPABASE_URL + '/rest/v1/records?id=neq.0', { method: 'DELETE', headers: dbHeaders() }).then(() => fetchCloudData());
+}
+
+function exportCSV() {
+  const data = getFilteredRecords();
+  if (data.length === 0) { alert('لا توجد سجلات'); return; }
+  const pairs = buildWorkPairs();
+  let csv = 'الاسم,الرقم,الحالة,التاريخ,الوقت,ساعات العمل,التأخير\n';
+  data.forEach(r => {
+    const work = r.type === 'in' ? (pairs[records.indexOf(r)] != null ? fmtDur(pairs[records.indexOf(r)]) : '') : '';
+    const late = r.type === 'in' ? (r.late_minutes > 0 ? fmtDur(r.late_minutes) : 'في الموعد') : '';
+    csv += '"' + r.name + '","' + r.id + '","' + (r.type === 'in' ? 'حضور' : 'انصراف') + '","' + r.date + '","' + r.timeStr + '","' + work + '","' + late + '"\n';
+  });
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'attendance-' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+}
+
+function exportCSVByShift(shiftKey) {
+  const pairs = buildWorkPairs();
+  const shiftEmps = employees.filter(e => (e.shift || 'employee') === shiftKey);
+  const ids = {};
+  shiftEmps.forEach(e => ids[e.id] = true);
+  const data = getFilteredRecords().filter(r => ids[r.id]);
+  if (data.length === 0) { alert('لا توجد سجلات لهذه الفئة'); return; }
+  let csv = 'الاسم,الرقم,الحالة,التاريخ,الوقت,ساعات العمل,التأخير\n';
+  data.forEach(r => {
+    const work = r.type === 'in' ? (pairs[records.indexOf(r)] != null ? fmtDur(pairs[records.indexOf(r)]) : '') : '';
+    const late = r.type === 'in' ? (r.late_minutes > 0 ? fmtDur(r.late_minutes) : 'في الموعد') : '';
+    csv += '"' + r.name + '","' + r.id + '","' + (r.type === 'in' ? 'حضور' : 'انصراف') + '","' + r.date + '","' + r.timeStr + '","' + work + '","' + late + '"\n';
+  });
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = shiftKey + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+}
+
+function exportExcel() {
+  const data = getFilteredRecords();
+  if (data.length === 0) { alert('لا توجد سجلات'); return; }
+  const pairs = buildWorkPairs();
+  let content = 'الاسم\tالرقم\tالحالة\tالتاريخ\tالوقت\tساعات العمل\tالتأخير\n';
+  data.forEach(r => {
+    const work = r.type === 'in' ? (pairs[records.indexOf(r)] != null ? fmtDur(pairs[records.indexOf(r)]) : '') : '';
+    const late = r.type === 'in' ? (r.late_minutes > 0 ? fmtDur(r.late_minutes) : 'في الموعد') : '';
+    content += r.name + '\t' + r.id + '\t' + (r.type === 'in' ? 'حضور' : 'انصراف') + '\t' + r.date + '\t' + r.timeStr + '\t' + work + '\t' + late + '\n';
+  });
+  const blob = new Blob(['\uFEFF' + content], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'attendance-' + new Date().toISOString().slice(0, 10) + '.xls';
+  a.click();
+}
+
+function exportExcelByShift(shiftKey) {
+  const pairs = buildWorkPairs();
+  const shiftEmps = employees.filter(e => (e.shift || 'employee') === shiftKey);
+  const ids = {};
+  shiftEmps.forEach(e => ids[e.id] = true);
+  const data = getFilteredRecords().filter(r => ids[r.id]);
+  if (data.length === 0) { alert('لا توجد سجلات لهذه الفئة'); return; }
+  let content = 'الاسم\tالرقم\tالحالة\tالتاريخ\tالوقت\tساعات العمل\tالتأخير\n';
+  data.forEach(r => {
+    const work = r.type === 'in' ? (pairs[records.indexOf(r)] != null ? fmtDur(pairs[records.indexOf(r)]) : '') : '';
+    const late = r.type === 'in' ? (r.late_minutes > 0 ? fmtDur(r.late_minutes) : 'في الموعد') : '';
+    content += r.name + '\t' + r.id + '\t' + (r.type === 'in' ? 'حضور' : 'انصراف') + '\t' + r.date + '\t' + r.timeStr + '\t' + work + '\t' + late + '\n';
+  });
+  const blob = new Blob(['\uFEFF' + content], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = shiftKey + '-' + new Date().toISOString().slice(0, 10) + '.xls';
+  a.click();
+}
+
+document.getElementById('today-date').textContent = new Date().toLocaleDateString('ar-EG', {
+  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+});
+loadModels();
+checkAuth();
+// Offline-first: حمّل البيانات المحلية فوراً حتى تعمل الأزرار والتنقل بدون إنترنت
+applyLocalDataAndRefreshUI();
+if (authToken) fetchCloudData();
+window.addEventListener('online', function() {
+  flushOfflineQueue();
+  if (authToken) fetchCloudData();
+});
+window.addEventListener('offline', function() {
+  applyLocalDataAndRefreshUI();
+});
+</script>
+</body>
+</html>
