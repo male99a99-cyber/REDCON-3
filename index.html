@@ -1206,6 +1206,13 @@ window.addEventListener('online', function() {
 window.addEventListener('offline', function() {
   applyLocalDataAndRefreshUI();
 });
+  <link rel="manifest" href="./manifest.json">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js');
+  }
+</script>
+
 </script>
 </body>
 </html>
